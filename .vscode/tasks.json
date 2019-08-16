@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "java",
+            "args": ["-jar", "${env:HOME}/c64/kick/KickAss.jar", "${file}"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": {
+                "fileLocation": ["relative", "${workspaceFolder}"],
+                "owner": "kickassembler",                
+                "pattern": {
+                    "regexp": "/^.*(Error: )(.*)\\sat line (\\d+), column (\\d+) in (\\S+\\.asm).*$/gm",
+                    "file": 5,
+                    "line": 3,
+                    "column": 4,
+                    "severity": 4,
+                    "message": 2
+                }
+            }
+        },
+        {
+            "label": "run",
+            "command": "x64",
+            "args": ["${fileBasenameNoExtension}.prg"],
+            "dependsOn": [
+                "build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "debug",
+            "command": "${env:HOME}/c64/C64-65XE-Debugger/c64debugger",
+            "args": ["${fileBasenameNoExtension}.prg"],
+            "dependsOn": [
+                "build"
+            ],
+            "problemMatcher": []
+        },
+    ]
+}
