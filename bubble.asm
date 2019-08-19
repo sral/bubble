@@ -1,4 +1,4 @@
-BasicUpstart2(Start)
+BasicUpstart2(Entry)
 
 #import "./lib/c64.asm"
 
@@ -11,27 +11,34 @@ ElementCount:
 Swap:
 .byte 0
 
-Start:
+Entry:
     lda #$01            // There's no work to be done if len(Elements) <= 1
     cmp ElementCount
     bpl Exit
 
+                        // Setup zeropage (0x00fb, 0x00fc) to point to Elements
+    lda #<Elements      // Low byte of address
+    sta $00fb
+    lda #>Elements      // High byte of address
+    sta $00fc
+
+!Outer:
     ldx ElementCount
     ldy #$00
 
 !Inner:
-    lda Elements, y     // Read Elements[y]
+    lda ($fb), y
     iny
-    cmp Elements, y     // Compare Elements[y] to Elements[y + 1]
-    bmi SkipSwap        // Swap if Elements[y] > Elements[y + 1]
+    cmp ($fb), y        // Compare Elements[y] to Elements[y + 1]
+    bmi !SkipSwap+      // Swap if Elements[y] > Elements[y + 1]
 
-    pha                 // Push Elements[y]
-    lda Elements, y     // Load Elements[y + 1]
+    pha
+    lda ($fb), y        // Load Elements[y + 1]
     dey
-    sta Elements, y     // Store Elements[y] := Elements[y + 1]
+    sta ($fb), y        // Set Elements[y] := Elements[y + 1]
     iny
-    pla                 // Pop Elements[y]
-    sta Elements, y     // Store Elements[y + 1] := previous Elements[y]
+    pla
+    sta ($fb), y        // Set Elements[y + 1] := Elements[y]
 
     WaitForVsync()      // Let's waste some cycles (312 * 63?)
     stx VIC.BORDER_COLOR
@@ -39,7 +46,7 @@ Start:
     lda #$01
     sta Swap            // Set swap flag to true
 
-SkipSwap:
+!SkipSwap:
     dex
     bne !Inner-
 
@@ -51,7 +58,7 @@ SkipSwap:
     sta Swap
 
     dec ElementCount
-    bne Start
+    bne !Outer-
 
 Exit:
     lda #$0e           // Reset background color
